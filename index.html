@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>打ち合わせの持ち物チェック</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #22313b;
+      --muted: #71808b;
+      --line: #dce5e8;
+      --paper: #ffffff;
+      --surface: #f3f7f6;
+      --accent: #1f7a6d;
+      --accent-dark: #186256;
+      --danger: #b54d58;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+      background: linear-gradient(145deg, #edf5f3, #f9fbfa 58%, #edf1f7);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .card {
+      width: min(100%, 620px);
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid rgba(205, 219, 217, .9);
+      border-radius: 20px;
+      box-shadow: 0 18px 50px rgba(45, 68, 72, .12);
+    }
+
+    header {
+      padding: 32px 32px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      letter-spacing: .03em;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .content { padding: 24px 32px 28px; }
+
+    .add-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .add-form input {
+      min-width: 0;
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .add-form input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 122, 109, .13);
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      font: inherit;
+      transition: transform .15s ease, background-color .15s ease, opacity .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .add-button {
+      padding: 11px 17px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .add-button:hover { background: var(--accent-dark); }
+
+    .checklist {
+      min-height: 86px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 2px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .item:last-child { border-bottom: 0; }
+
+    .item label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .item input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .item-text {
+      overflow-wrap: anywhere;
+      transition: color .15s ease, text-decoration-color .15s ease;
+    }
+
+    .item.completed .item-text {
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+    }
+
+    .delete-button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      color: var(--danger);
+      background: transparent;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .delete-button:hover { background: #fff0f1; }
+
+    .empty {
+      display: grid;
+      min-height: 86px;
+      place-items: center;
+      color: var(--muted);
+      font-size: .94rem;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    #progress { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .reset-button {
+      padding: 9px 13px;
+      color: #52616a;
+      background: #edf1f2;
+      font-size: .9rem;
+      white-space: nowrap;
+    }
+
+    .reset-button:hover { background: #e1e8e9; }
+
+    @media (max-width: 480px) {
+      body { padding: 16px 12px; }
+      header, .content { padding-left: 20px; padding-right: 20px; }
+      .add-form { gap: 8px; }
+      .add-button { padding-left: 12px; padding-right: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header>
+      <h1>打ち合わせの持ち物</h1>
+      <p class="subtitle">準備できたものをチェックして、忘れ物を防ぎましょう。</p>
+    </header>
+
+    <section class="content" aria-label="持ち物リスト">
+      <form class="add-form" id="add-form">
+        <input id="new-item" type="text" placeholder="持ち物を入力" maxlength="80" autocomplete="off" aria-label="追加する持ち物" />
+        <button class="add-button" type="submit">追加</button>
+      </form>
+
+      <ul class="checklist" id="checklist" aria-live="polite"></ul>
+
+      <div class="footer">
+        <p id="progress">0 / 0 完了</p>
+        <button class="reset-button" id="reset-button" type="button">チェックをリセット</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const defaults = ["ノートPC", "充電器", "資料", "筆記用具", "名刺"];
+    const storageKey = "meeting-checklist-items";
+    const form = document.querySelector("#add-form");
+    const input = document.querySelector("#new-item");
+    const list = document.querySelector("#checklist");
+    const progress = document.querySelector("#progress");
+    const resetButton = document.querySelector("#reset-button");
+
+    function loadItems() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (Array.isArray(saved)) return saved;
+      } catch (error) {
+        // 保存済みのデータが壊れている場合は初期項目を表示します。
+      }
+      return defaults.map(text => ({ id: crypto.randomUUID(), text, completed: false }));
+    }
+
+    let items = loadItems();
+
+    function saveItems() {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    }
+
+    function updateProgress() {
+      const completed = items.filter(item => item.completed).length;
+      progress.textContent = `${completed} / ${items.length} 完了`;
+    }
+
+    function render() {
+      list.textContent = "";
+
+      if (items.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "持ち物を追加してください";
+        list.append(empty);
+      } else {
+        items.forEach(item => {
+          const row = document.createElement("li");
+          row.className = `item${item.completed ? " completed" : ""}`;
+
+          const label = document.createElement("label");
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = item.completed;
+          checkbox.addEventListener("change", () => {
+            item.completed = checkbox.checked;
+            saveItems();
+            render();
+          });
+
+          const text = document.createElement("span");
+          text.className = "item-text";
+          text.textContent = item.text;
+          label.append(checkbox, text);
+
+          const remove = document.createElement("button");
+          remove.className = "delete-button";
+          remove.type = "button";
+          remove.setAttribute("aria-label", `${item.text}を削除`);
+          remove.textContent = "×";
+          remove.addEventListener("click", () => {
+            items = items.filter(entry => entry.id !== item.id);
+            saveItems();
+            render();
+          });
+
+          row.append(label, remove);
+          list.append(row);
+        });
+      }
+
+      updateProgress();
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      items.push({ id: crypto.randomUUID(), text, completed: false });
+      input.value = "";
+      saveItems();
+      render();
+      input.focus();
+    });
+
+    resetButton.addEventListener("click", () => {
+      items = items.map(item => ({ ...item, completed: false }));
+      saveItems();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
